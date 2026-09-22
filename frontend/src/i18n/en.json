@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "ShetkariHit",
+    "tagline": "One decision for a better crop"
+  },
+  "nav": {
+    "today": "Today",
+    "ask": "Ask",
+    "schemes": "Schemes",
+    "account": "Account",
+    "home": "Home"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "skip": "Skip",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "acres": "acres",
+    "listen": "Listen",
+    "demoData": "Demo data",
+    "updated": "Updated {{time}}",
+    "offline": "You are offline. Showing last saved information.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
+  "welcome": {
+    "headline": "One Decision,\nBetter Harvest",
+    "sub": "Smart farming insights, AI advice, weather updates and more.",
+    "getStarted": "Get Started",
+    "login": "Login",
+    "chooseLanguage": "Choose your language",
+    "footer": "Helping farmers make smarter decisions every day."
+  },
+  "auth": {
+    "signupTitle": "Create your account",
+    "loginTitle": "Welcome back",
+    "fullName": "Your name",
+    "mobile": "Mobile number",
+    "email": "Email",
+    "password": "Password",
+    "village": "Village",
+    "taluka": "Taluka",
+    "district": "District",
+    "state": "State",
+    "signup": "Create account",
+    "login": "Log in",
+    "haveAccount": "Already have an account?",
+    "noAccount": "New here?",
+    "passwordHint": "At least 8 characters",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "confirmPassword": "Confirm password",
+    "forgot": "Forgot password?",
+    "resetTitle": "Reset your password"
+  },
+  "onboarding": {
+    "farmTitle": "Let's set up your farm",
+    "farmSub": "This takes a minute. You can change it later.",
+    "farmName": "Farm name",
+    "totalArea": "Total area (acres)",
+    "waterSource": "Water source",
+    "irrigation": "Irrigation method",
+    "soilType": "Soil type",
+    "plotTitle": "Add your first plot",
+    "plotSub": "A plot is one piece of land with one crop. You can add more after this.",
+    "plotName": "Plot name",
+    "plotArea": "Area (acres)",
+    "crop": "Crop",
+    "variety": "Variety",
+    "sowingDate": "Sowing / planting date",
+    "addPlot": "Add plot",
+    "addAnother": "Add another plot",
+    "finish": "Done"
+  },
+  "today": {
+    "greeting": "Namaskar, {{name}}",
+    "allFarm": "All farm",
+    "todayAction": "Today",
+    "why": "Why?",
+    "whyHide": "Hide reasons",
+    "next": "Next",
+    "noAdvisory": "No advisory yet for this plot.",
+    "noAdvisoryHint": "It will appear once today's weather and soil data arrive.",
+    "confidenceHigh": "High confidence",
+    "confidenceMedium": "Medium confidence",
+    "confidenceLow": "Low confidence",
+    "sensorOffline": "Sensor offline — this uses estimated soil moisture.",
+    "markDone": "Mark as done",
+    "marked": "Done",
+    "whatIf": "What if?",
+    "whyChanged": "Why did this change?",
+    "twoActions": "{{count}} plots need different actions today."
+  },
+  "weather": {
+    "title": "Weather",
+    "humidity": "Humidity",
+    "rainfall": "Rain",
+    "wind": "Wind",
+    "forecast": "3-day forecast"
+  },
+  "market": {
+    "title": "Market prices",
+    "perQuintal": "/ quintal",
+    "rising": "Rising",
+    "falling": "Falling",
+    "stable": "Stable"
+  }
+}

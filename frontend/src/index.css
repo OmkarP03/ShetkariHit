@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: dark; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-canvas text-ink font-sans text-body antialiased;
+    /* keep content clear of the phone's home indicator */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Visible focus ring — farmers using keyboard/switch access need this,
+     and it is the first thing removed by careless resets. */
+  :focus-visible { @apply outline-none ring-2 ring-leaf ring-offset-2 ring-offset-canvas; }
+}
+
+@layer components {
+  .card { @apply bg-surface rounded-card border border-hairline p-4 shadow-card; }
+  .pill { @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-sm font-medium; }
+  .btn-primary {
+    @apply flex h-tap w-full items-center justify-center gap-2 rounded-card
+           bg-leaf text-canvas text-action active:bg-leaf-deep disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply flex h-tap w-full items-center justify-center gap-2 rounded-card
+           border border-hairline bg-transparent text-ink text-action active:bg-raised;
+  }
+  .field {
+    @apply h-tap w-full rounded-card border border-hairline bg-raised px-4
+           text-body text-ink placeholder:text-ink-faint;
+  }
+}

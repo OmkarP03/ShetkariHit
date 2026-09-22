@@ -1,0 +1,28 @@
+# Normalise line endings.
+#
+# This project is edited on Windows (E:\EDI\shetkarihit) but the repository
+# should store LF, so diffs stay clean if anyone clones it on Linux or macOS.
+# Git converts on checkout, so nothing changes about how you edit locally.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF or cmd.exe mis-parses them.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary files: never convert, never diff as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.docx  binary
+*.xlsx  binary
+
+# Generated — collapse in pull request diffs so reviews stay readable.
+package-lock.json  linguist-generated=true -diff
+src/types/database.ts linguist-generated=true
+
+# Large reference data from the Local Government Directory. Committed on
+# purpose (the app needs it), but not worth diffing line by line.
+data/*.csv  -diff

@@ -1,0 +1,54 @@
+# ---- Dependencies -----------------------------------------------------
+# Never commit these. package-lock.json is enough to rebuild them exactly,
+# and node_modules is ~200 MB of files GitHub does not want.
+node_modules/
+.pnp
+.pnp.js
+
+# ---- Build output -----------------------------------------------------
+dist/
+dist-ssr/
+build/
+# vite-plugin-pwa writes a dev service worker here
+dev-dist/
+*.local
+
+# ---- Secrets ----------------------------------------------------------
+# .env.local holds this machine's Supabase keys. The anon key is public by
+# design — row level security is what protects the data — but keeping the
+# file per-machine means a service_role key can never be committed by
+# accident later. .env.example IS committed, as the template.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---- TypeScript / tooling caches --------------------------------------
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+.eslintcache
+
+# ---- Editors and OS ---------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs -------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Test / coverage --------------------------------------------------
+coverage/
+.nyc_output/
+
+# ---- Supabase CLI local stack ----------------------------------------
+supabase/.temp/
+supabase/.branches/
