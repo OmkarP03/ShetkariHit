@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n';
  *  Doctor, Analytics) are reached from within Today and Account, not here. */
 const TABS = [
   { to: '/today',   key: 'nav.home',    icon: HomeIcon },
-  { to: '/ask',     key: 'nav.ask',     icon: MicIcon },
+  { to: '/prices',  key: 'nav.prices',  icon: ChartIcon },
   { to: '/schemes', key: 'nav.schemes', icon: SchemeIcon },
   { to: '/account', key: 'nav.account', icon: UserIcon },
 ];
@@ -20,7 +20,7 @@ export default function AppShell() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-hairline bg-surface/95 backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-hairline bg-white/95 shadow-[0_-8px_30px_rgba(24,55,38,0.06)] backdrop-blur"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="mx-auto flex max-w-md">
@@ -32,7 +32,7 @@ export default function AppShell() {
                   [
                     // 56px tall: a thumb target, not a mouse target
                     'flex h-tap flex-col items-center justify-center gap-1 text-xs',
-                    isActive ? 'text-leaf' : 'text-ink-faint',
+                    isActive ? 'text-leaf' : 'text-ink-muted',
                   ].join(' ')
                 }
               >
@@ -64,13 +64,11 @@ function HomeIcon({ active }: { active: boolean }) {
   );
 }
 
-function MicIcon({ active }: { active: boolean }) {
+function ChartIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="9" y="3" width="6" height="11" rx="3"
-        stroke="currentColor" strokeWidth="1.8"
-        fill={active ? 'currentColor' : 'none'} fillOpacity={active ? 0.18 : 0} />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      {active && <path d="m7 15 4-4 3 2 5-6v12H7Z" fill="currentColor" opacity=".12" />}
     </svg>
   );
 }

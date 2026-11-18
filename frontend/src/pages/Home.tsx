@@ -1,310 +1,149 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useI18n } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
-import { useFarm } from '@/context/FarmContext';
+import { cottonCatalog, predictCotton, type CottonPrediction, type CottonSeries } from '@/services/cottonForecast';
 import { supabase } from '@/services/supabase';
-import { fetchToday } from '@/services/advisories';
-import type { ResolvedAdvisory } from '@/types/advisory';
-import { confidenceBand } from '@/types/advisory';
-import {
-  Badge, DemoChip, Delta, EmptyState, Photo, SectionHeader, Skeleton, formatAgo,
-} from '@/components/ui';
-import PlotSelector from '@/components/PlotSelector';
-import type { Tables } from '@/types/database';
 
-type Weather = Tables<'weather_data'>;
-type Price = Tables<'market_prices'>;
+const SELECTION_KEY = 'shetkarihit.cotton-series';
 
 export default function Home() {
-  const { t, lang } = useI18n();
   const { profile } = useAuth();
-  const { farm, plots, selected } = useFarm();
   const navigate = useNavigate();
-
-  const [advisories, setAdvisories] = useState<ResolvedAdvisory[]>([]);
-  const [current, setCurrent] = useState<Weather | null>(null);
-  const [forecast, setForecast] = useState<Weather[]>([]);
-  const [prices, setPrices] = useState<Price[]>([]);
+  const [prediction, setPrediction] = useState<CottonPrediction | null>(null);
+  const [selection, setSelection] = useState<CottonSeries | null>(null);
+  const [schemes, setSchemes] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const plotNames = useMemo(() => {
-    const m = new Map<string, { plotName: string; cropName: string }>();
-    for (const { plot, crop } of plots) {
-      m.set(plot.id, {
-        plotName: plot.plot_name ?? `Plot ${plot.plot_number ?? ''}`.trim(),
-        cropName: crop?.crop_name ?? '—',
-      });
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [{ series }, schemeResult] = await Promise.all([
+          cottonCatalog(),
+          supabase.from('government_schemes').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        ]);
+        if (cancelled) return;
+        setSchemes(schemeResult.count ?? 0);
+        const stored = readStoredSelection();
+        const chosen = (stored && series.find((item) => id(item) === id(stored)))
+          || series.find((item) => item.district.toLowerCase() === profile?.district?.toLowerCase())
+          || series[0];
+        if (chosen) {
+          setSelection(chosen);
+          const values = await predictCotton(chosen);
+          if (!cancelled) setPrediction(values.find((item) => item.horizon_days === 7) ?? values[0]);
+        }
+      } catch {
+        // The full forecast screen explains stale or unavailable series in detail.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    return m;
-  }, [plots]);
+    void load();
+    return () => { cancelled = true; };
+  }, [profile?.district]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const district = profile?.district ?? farm?.district ?? null;
-
-    const [adv, cur, fc, pr] = await Promise.all([
-      fetchToday(lang, plotNames, selected).catch(() => []),
-      supabase.from('weather_data').select('*')
-        .eq('is_forecast', false)
-        .order('observation_time', { ascending: false }).limit(1)
-        .then(({ data }) => data?.[0] ?? null),
-      supabase.from('weather_data').select('*')
-        .eq('is_forecast', true)
-        .gte('observation_date', new Date().toISOString().slice(0, 10))
-        .order('observation_date', { ascending: true }).limit(3)
-        .then(({ data }) => data ?? []),
-      (district
-        ? supabase.from('market_prices').select('*').eq('district', district)
-        : supabase.from('market_prices').select('*')
-      ).order('price_date', { ascending: false }).limit(5)
-        .then(({ data }) => data ?? []),
-    ]);
-
-    setAdvisories(adv);
-    setCurrent(cur);
-    setForecast(fc);
-    setPrices(pr);
-    setLoading(false);
-  }, [lang, plotNames, selected, profile?.district, farm?.district]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const firstName = profile?.first_name ?? 'Farmer';
-  const hour = new Date().getHours();
-  const partOfDay = hour < 12 ? 'Good morning!' : hour < 17 ? 'Good afternoon!' : 'Good evening!';
+  const firstName = profile?.first_name?.trim() || 'Farmer';
+  const change = prediction ? ((prediction.predicted_price / prediction.latest_price) - 1) * 100 : 0;
 
   return (
-    <div className="mx-auto max-w-md px-4 pt-6">
-      {/* Greeting row */}
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[22px] font-bold leading-tight">
-            {t('today.greeting', { name: firstName })}
-          </p>
-          <p className="mt-0.5 text-body text-ink-muted">{partOfDay}</p>
+    <div className="page-shell dashboard-page">
+      <header className="dashboard-topbar">
+        <div>
+          <p className="eyebrow">ShetkariHit</p>
+          <h1>Namaskar, {firstName}</h1>
+          <p>{profile?.district ? `${profile.district}, Maharashtra` : 'Your farm market companion'}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button aria-label="Notifications"
-            className="flex h-11 w-11 items-center justify-center rounded-pill bg-surface text-ink-muted">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8M13.7 21a2 2 0 0 1-3.4 0"
-                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button onClick={() => navigate('/account')} aria-label={t('nav.account')}>
-            <Photo
-              src={profile?.profile_image_url ?? undefined}
-              alt="Profile photo"
-              label=""
-              className="h-11 w-11 rounded-pill"
-            />
-          </button>
-        </div>
+        <button className="profile-button" onClick={() => navigate('/account')} aria-label="Open profile">
+          {profile?.profile_image_url
+            ? <img src={profile.profile_image_url} alt="" />
+            : <span>{firstName.charAt(0).toUpperCase()}</span>}
+        </button>
       </header>
 
-      <WeatherCard weather={current} district={profile?.district ?? farm?.district ?? null} />
+      <section className="welcome-strip">
+        <div>
+          <p>Today’s focus</p>
+          <h2>Make a better cotton selling decision</h2>
+          <span>Check the estimate, its price range and data freshness before you choose a market.</span>
+        </div>
+        <button onClick={() => navigate('/prices')}>Open forecast <ArrowIcon /></button>
+      </section>
 
-      <PlotSelectorRow />
+      <div className="dashboard-section-title">
+        <div><p>Price intelligence</p><h2>Your crops</h2></div>
+        <button onClick={() => navigate('/prices')}>View all</button>
+      </div>
 
-      {/* Today's Decisions */}
-      <SectionHeader title="Today's Decisions"
-        onSeeAll={advisories.length ? () => navigate('/advisory') : undefined} />
-
-      {loading && <Skeleton className="h-28" />}
-
-      {!loading && advisories.length === 0 && (
-        <EmptyState
-          title={t('today.noAdvisory')}
-          hint={t('today.noAdvisoryHint')}
-        />
-      )}
-
-      {!loading && advisories.map((a) => (
-        <button
-          key={a.id}
-          onClick={() => navigate(`/advisory/${a.id}`)}
-          className="card mb-3 flex w-full items-center gap-3 text-left"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-leaf-soft text-leaf">
-            <DropIcon />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-2">
-              <span className="text-body font-semibold">{a.type.replace('_', ' ')}</span>
-              <ConfidenceTag score={a.confidence} />
-            </span>
-            <span className="mt-0.5 block truncate text-body text-ink-muted">{a.title}</span>
-          </span>
-          <ChevronRight />
+      <div className="crop-overview-grid">
+        <button className="crop-overview cotton-card" onClick={() => navigate('/prices')}>
+          <div className="outline-icon"><CottonIcon /></div>
+          <div><strong>Cotton</strong><span>Forecast available</span></div>
+          <ArrowIcon />
         </button>
-      ))}
-
-      {/* 3 Day Forecast */}
-      <SectionHeader title={t('weather.forecast')} />
-      {forecast.length === 0 ? (
-        <EmptyState title="No forecast data yet."
-          hint="Forecast rows arrive once weather ingestion runs." />
-      ) : (
-        <div className="grid grid-cols-3 gap-3">
-          {forecast.map((d, i) => (
-            <div key={d.id} className="card items-center p-3 text-center">
-              <p className="text-sm text-ink-muted">
-                {i === 0 ? 'Today' : new Date(d.observation_date ?? '').toLocaleDateString('en-IN', { weekday: 'short' })}
-              </p>
-              <p className="my-2 text-2xl" aria-hidden="true">{conditionEmoji(d.weather_condition)}</p>
-              <p className="text-body font-semibold">
-                {d.temperature_celsius !== null ? `${Math.round(d.temperature_celsius)}°` : '—'}
-              </p>
-              <p className="mt-1 text-sm text-sky">
-                {d.rainfall_mm !== null ? `${d.rainfall_mm} mm` : '—'}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Market Prices */}
-      <SectionHeader title={t('market.title')} onSeeAll={() => navigate('/market')} />
-      {prices.length === 0 ? (
-        <EmptyState title="No market prices yet."
-          hint="Prices appear once a market data source is connected." />
-      ) : (
-        <div className="card divide-y divide-hairline p-0">
-          {prices.map((p) => (
-            <div key={p.id} className="flex items-center gap-3 p-4">
-              <span className="text-2xl" aria-hidden="true">{cropEmoji(p.crop_name)}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-body font-medium">{p.crop_name}</span>
-                <span className="block text-body text-ink-muted">
-                  ₹{p.modal_price?.toLocaleString('en-IN') ?? '—'}
-                  <span className="text-ink-faint"> {t('market.perQuintal')}</span>
-                </span>
-              </span>
-              <Delta value={null} />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="h-6" />
-    </div>
-  );
-}
-
-function PlotSelectorRow() {
-  return <div className="mt-5"><PlotSelector /></div>;
-}
-
-function WeatherCard({ weather, district }: { weather: Weather | null; district: string | null }) {
-  const { t } = useI18n();
-  const ago = formatAgo(weather?.fetched_at ?? weather?.observation_time, t);
-
-  if (!weather) {
-    return (
-      <div className="card">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-body text-ink-muted">{district ?? '—'}</p>
-            <p className="mt-2 text-[40px] font-bold leading-none text-ink-faint">—</p>
-            <p className="mt-2 text-body text-ink-muted">No weather data yet</p>
-          </div>
-          <span className="text-4xl opacity-40" aria-hidden="true">🌤</span>
-        </div>
-        <p className="mt-4 border-t border-hairline pt-3 text-sm text-ink-faint">
-          Weather appears once the ingestion job runs. Nothing is estimated here.
-        </p>
+        <button className="crop-overview soybean-card" onClick={() => navigate('/prices')}>
+          <div className="outline-icon"><BeanIcon /></div>
+          <div><strong>Soybean</strong><span>Coming soon</span></div>
+          <ArrowIcon />
+        </button>
       </div>
-    );
-  }
 
-  return (
-    <div className="card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-body text-ink-muted">
-            {[weather.village, weather.district, weather.state].filter(Boolean).join(', ') || district}
-          </p>
-          <p className="mt-2 flex items-baseline gap-1">
-            <span className="text-[40px] font-bold leading-none">
-              {weather.temperature_celsius !== null ? Math.round(weather.temperature_celsius) : '—'}
+      {loading ? <div className="dashboard-forecast loading-card" /> : prediction ? (
+        <section className="dashboard-forecast" onClick={() => navigate('/prices')}>
+          <div className="dashboard-forecast-top">
+            <div>
+              <p>7-day cotton estimate</p>
+              <h2>{money(prediction.predicted_price)} <span>/ quintal</span></h2>
+            </div>
+            <span className={change >= 0 ? 'forecast-change up' : 'forecast-change down'}>
+              {change >= 0 ? '+' : ''}{change.toFixed(1)}%
             </span>
-            <span className="text-lead text-ink-muted">°C</span>
-          </p>
-          <p className="mt-1 text-body text-ink-muted">{weather.weather_condition ?? '—'}</p>
-        </div>
-        <div className="text-right">
-          <span className="text-4xl" aria-hidden="true">{conditionEmoji(weather.weather_condition)}</span>
-          {ago && <p className="mt-2 text-sm text-ink-faint">{ago}</p>}
-        </div>
+          </div>
+          <div className="mini-range"><span /></div>
+          <div className="dashboard-range"><span>{money(prediction.range_80_low)}</span><em>Typical range</em><span>{money(prediction.range_80_high)}</span></div>
+          <div className="dashboard-forecast-footer">
+            <span>{selection?.market} · {selection?.variety}</span>
+            <strong>{prediction.data_age_days === 0 ? 'Current data' : `${prediction.data_age_days} days old`}</strong>
+          </div>
+        </section>
+      ) : (
+        <section className="dashboard-unavailable">
+          <strong>Choose a market to start</strong>
+          <p>Open Prices and select a market with recent verified observations.</p>
+          <button onClick={() => navigate('/prices')}>Select market</button>
+        </section>
+      )}
+
+      <div className="dashboard-section-title">
+        <div><p>Benefits for you</p><h2>Government schemes</h2></div>
+        <button onClick={() => navigate('/schemes')}>View schemes</button>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-hairline pt-3">
-        <Metric label={t('weather.humidity')} value={weather.humidity_percent !== null ? `${weather.humidity_percent}%` : '—'} />
-        <Metric label={t('weather.rainfall')} value={weather.rainfall_mm !== null ? `${weather.rainfall_mm} mm` : '—'} />
-        <Metric label={t('weather.wind')} value={weather.wind_speed_kmh !== null ? `${weather.wind_speed_kmh} km/h` : '—'} />
-      </div>
+      <button className="scheme-summary" onClick={() => navigate('/schemes')}>
+        <div className="outline-icon"><DocumentIcon /></div>
+        <div>
+          <strong>{schemes ? `${schemes} verified schemes available` : 'Scheme matching is ready'}</strong>
+          <span>Review eligibility, required documents and official application links.</span>
+        </div>
+        <ArrowIcon />
+      </button>
+
+      <section className="trust-note">
+        <ShieldIcon />
+        <p><strong>Clear about uncertainty</strong><span>Predictions are estimates. ShetkariHit always shows the data date, expected range and model error.</span></p>
+      </section>
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-sm text-ink-faint">{label}</p>
-      <p className="mt-0.5 text-body font-semibold">{value}</p>
-    </div>
-  );
+function readStoredSelection(): CottonSeries | null {
+  try { return JSON.parse(localStorage.getItem(SELECTION_KEY) || 'null') as CottonSeries | null; } catch { return null; }
 }
+function id(item: Pick<CottonSeries, 'district' | 'market' | 'variety'>): string { return `${item.district}|${item.market}|${item.variety}`; }
+function money(value: number): string { return `₹${Math.round(value).toLocaleString('en-IN')}`; }
 
-function ConfidenceTag({ score }: { score: number | null }) {
-  const { t } = useI18n();
-  const band = confidenceBand(score);
-  if (band === 'HIGH') return <Badge tone="leaf">{t('today.confidenceHigh')}</Badge>;
-  if (band === 'MEDIUM') return <Badge tone="gold">{t('today.confidenceMedium')}</Badge>;
-  return <Badge tone="muted">{t('today.confidenceLow')}</Badge>;
-}
-
-/** Emoji stand in for the reference's photographic crop icons. Swap for real
- *  artwork by dropping files in /public and mapping them here. */
-function cropEmoji(name: string | null): string {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('onion') || n.includes('कांदा')) return '🧅';
-  if (n.includes('cotton') || n.includes('कापूस')) return '🌿';
-  if (n.includes('soy')) return '🫘';
-  if (n.includes('wheat') || n.includes('गहू')) return '🌾';
-  if (n.includes('tur') || n.includes('arhar') || n.includes('तूर')) return '🫛';
-  if (n.includes('pomegranate') || n.includes('डाळिंब')) return '🍎';
-  if (n.includes('orange') || n.includes('संत्र')) return '🍊';
-  if (n.includes('grape')) return '🍇';
-  if (n.includes('sugar')) return '🎋';
-  if (n.includes('tomato')) return '🍅';
-  return '🌱';
-}
-
-function conditionEmoji(condition: string | null): string {
-  const c = (condition ?? '').toLowerCase();
-  if (c.includes('thunder')) return '⛈';
-  if (c.includes('rain') || c.includes('drizzle')) return '🌧';
-  if (c.includes('cloud')) return '⛅';
-  if (c.includes('clear') || c.includes('sun')) return '☀️';
-  if (c.includes('haze') || c.includes('mist') || c.includes('fog')) return '🌫';
-  return '🌤';
-}
-
-function DropIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3s6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 6-10 6-10Z"
-        stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ChevronRight() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-ink-faint">
-      <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+function ArrowIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>; }
+function CottonIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20v-8M12 15l-4-3M12 16l4-3"/><path d="M12 12c-3 0-5-2-5-4a3 3 0 0 1 3-3c.5-2 3.5-2 4 0a3 3 0 0 1 3 3c0 2-2 4-5 4Z"/></svg>; }
+function BeanIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19c-4-3-3-9 1-12 3-2 7-1 9-4 3 5 2 11-2 14-2 2-5 3-8 2Z"/><path d="M7 19c2-4 5-7 10-10"/></svg>; }
+function DocumentIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6Z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>; }
+function ShieldIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>; }

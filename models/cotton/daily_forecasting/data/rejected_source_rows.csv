@@ -1,0 +1,4 @@
+row_number,reason
+1577,"modal price outside ₹1,000–₹20,000"
+5579,"modal price outside ₹1,000–₹20,000"
+25174,price order must satisfy min <= modal <= max

@@ -107,7 +107,7 @@ export default function Signup() {
     await refreshProfile();
 
     setBusy(false);
-    navigate('/setup/farm', { replace: true });
+    navigate('/today', { replace: true });
   }
 
   const show = (key: keyof typeof errs): string | null =>

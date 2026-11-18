@@ -1,14 +1,15 @@
 {
   "app": {
     "name": "ShetkariHit",
-    "tagline": "One decision for a better crop"
+    "tagline": "Better prices. Right schemes."
   },
   "nav": {
     "today": "Today",
     "ask": "Ask",
     "schemes": "Schemes",
     "account": "Account",
-    "home": "Home"
+    "home": "Home",
+    "prices": "Prices"
   },
   "common": {
     "next": "Next",
@@ -27,12 +28,12 @@
     "errorGeneric": "Something went wrong. Please try again."
   },
   "welcome": {
-    "headline": "One Decision,\nBetter Harvest",
-    "sub": "Smart farming insights, AI advice, weather updates and more.",
+    "headline": "Know the price.\nChoose with confidence.",
+    "sub": "Cotton price forecasts and government schemes matched to your farmer profile.",
     "getStarted": "Get Started",
     "login": "Login",
     "chooseLanguage": "Choose your language",
-    "footer": "Helping farmers make smarter decisions every day."
+    "footer": "Predictions show a price range, freshness and model accuracy—never a guarantee."
   },
   "auth": {
     "signupTitle": "Create your account",

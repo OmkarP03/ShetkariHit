@@ -1,0 +1,11 @@
+"use strict";
+const fs = require("fs"), path = require("path");
+const { parseCsv, writeCsv, prepareSourceRows, aggregateDaily } = require("../src/core");
+const root = path.resolve(__dirname, "../..");
+const input = path.join(root, "cleaning", "cotton_cleaned_stage1.csv");
+const dataDir = path.join(__dirname, "..", "data"); fs.mkdirSync(dataDir, { recursive: true });
+const { accepted, rejected } = prepareSourceRows(parseCsv(fs.readFileSync(input, "utf8")));
+const daily = aggregateDaily(accepted);
+writeCsv(path.join(dataDir, "daily_market_prices.csv"), daily, ["date","district","market","variety","arrivals_tonnes","min_price","max_price","modal_price","actual_rain_mm","source","verified"]);
+writeCsv(path.join(dataDir, "rejected_source_rows.csv"), rejected, ["row_number","reason"]);
+console.log(JSON.stringify({ source_rows: accepted.length + rejected.length, accepted_rows: accepted.length, rejected_rows: rejected.length, daily_rows: daily.length }, null, 2));

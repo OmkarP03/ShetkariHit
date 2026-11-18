@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.png'],
       manifest: {
         name: 'ShetkariHit',
         short_name: 'ShetkariHit',
-        description: 'One decision for a better crop',
-        theme_color: '#0B1410',
-        background_color: '#0B1410',
+        description: 'Cotton price forecasts and farmer scheme matching',
+        theme_color: '#187A47',
+        background_color: '#F4F8F5',
         display: 'standalone',
         start_url: '/',
         icons: [

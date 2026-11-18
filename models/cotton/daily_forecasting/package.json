@@ -1,0 +1,15 @@
+{
+  "name": "shetkarihit-cotton-forecasting",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "prepare": "node scripts/prepare_data.js",
+    "train": "node scripts/train.js",
+    "verify": "node scripts/verify.js",
+    "daily": "node scripts/train.js && node scripts/verify.js",
+    "predict": "node scripts/predict.js",
+    "ingest": "node scripts/ingest.js",
+    "test": "node --test test/core.test.js"
+  }
+}

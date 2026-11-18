@@ -84,7 +84,7 @@ export default function Welcome() {
 
         <Link
           to="/signup"
-          className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[18px] bg-leaf text-[19px] font-semibold text-[#0B2110] shadow-lg active:bg-leaf-deep"
+          className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[18px] bg-leaf text-[19px] font-semibold text-white shadow-lg active:bg-leaf-deep"
         >
           {t('welcome.getStarted')}
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
