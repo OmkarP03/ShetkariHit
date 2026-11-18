@@ -23,15 +23,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        runtimeCaching: [{
-          urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'sh-api',
-            expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
-            cacheableResponse: { statuses: [0, 200] }
-          }
-        }]
+        // Only the generated static precache is available offline.
+        importScripts: ['/retire-api-cache.js'],
+        runtimeCaching: []
       }
     })
   ],

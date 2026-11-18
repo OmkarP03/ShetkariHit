@@ -1,0 +1,4 @@
+# Copy to ignored terraform.tfvars and replace locally before planning.
+connection_arn      = "REPLACE_WITH_AVAILABLE_MUMBAI_CONNECTION_ARN"
+supabase_url        = "REPLACE_WITH_PUBLIC_PROJECT_URL"
+supabase_public_key = "REPLACE_WITH_PUBLISHABLE_OR_ANON_KEY"

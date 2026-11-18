@@ -37,6 +37,9 @@ export const supabase = createClient<Database>(
   url || 'https://unconfigured.supabase.co',
   anonKey || 'unconfigured',
   {
+    global: {
+      fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+    },
     auth: {
       persistSession: true,
       autoRefreshToken: true,

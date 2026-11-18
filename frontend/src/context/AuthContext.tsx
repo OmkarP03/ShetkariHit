@@ -104,7 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshProfile: async () => {
       if (session?.user) await loadProfile(session.user.id);
     },
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => {
+      try {
+        await supabase.auth.signOut();
+      } finally {
+        if ('caches' in window) await window.caches.delete('sh-api');
+      }
+    },
   }), [session, profile, loading, ready]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

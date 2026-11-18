@@ -1,0 +1,20 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - cd "$CODEBUILD_SRC_DIR/frontend"
+      - node scripts/check-public-config.mjs
+      - npm ci --no-audit --no-fund
+  build:
+    commands:
+      - npm ls --depth=0
+      - npm run lint --if-present
+      - npm test
+      - npm run build
+      - test -s dist/index.html && test -s dist/sw.js && test -s dist/retire-api-cache.js && test -s dist/manifest.webmanifest
+artifacts:
+  base-directory: frontend/dist
+  files:
+    - '**/*'

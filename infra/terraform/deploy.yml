@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - |
+        set -eu
+        test -s index.html
+        test -s sw.js
+        test -d assets
+        aws s3 sync assets/ "s3://$SITE_BUCKET/assets/" --size-only --cache-control 'public,max-age=31536000,immutable' --only-show-errors
+        aws s3 cp . "s3://$SITE_BUCKET/" --recursive --exclude 'assets/*' --exclude index.html --exclude sw.js --cache-control 'no-cache' --only-show-errors
+        aws s3 cp index.html "s3://$SITE_BUCKET/index.html" --cache-control 'no-cache' --only-show-errors
+        aws s3 cp sw.js "s3://$SITE_BUCKET/sw.js" --cache-control 'no-cache' --only-show-errors
+        aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths '/*'

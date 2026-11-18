@@ -52,3 +52,17 @@ coverage/
 # ---- Supabase CLI local stack ----------------------------------------
 supabase/.temp/
 supabase/.branches/
+
+# AWS and Terraform local configuration
+.aws/
+.terraform/
+*.tfstate*
+*.tfvars
+*.tfvars.json
+*.tfplan
+crash.log
+crash.*.log
+*.pem
+*.key
+.env.*
+!.env.example
