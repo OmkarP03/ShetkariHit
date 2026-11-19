@@ -1,0 +1,91 @@
+name: Deploy ShetkariHit
+
+on:
+  push:
+    branches: [sarthak/shetkarihit]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shetkarihit-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/sarthak/shetkarihit'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Validate configuration, install, test and build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          node scripts/check-public-config.mjs
+          npm ci --no-audit --no-fund
+          npm ls --depth=0
+          npm run lint --if-present
+          npm test
+          npm run build
+          for file in index.html sw.js retire-api-cache.js manifest.webmanifest; do test -s "dist/$file"; done
+          compgen -G 'dist/assets/*.js' > /dev/null
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      SITE_BUCKET: ${{ vars.S3_BUCKET }}
+      DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend
+          path: dist
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: '818783923752'
+          role-session-name: deploy-${{ github.run_id }}
+      - name: Publish assets, then entry points
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          aws s3 sync assets/ "s3://$SITE_BUCKET/assets/" --size-only --cache-control 'public,max-age=31536000,immutable' --only-show-errors
+          aws s3 cp . "s3://$SITE_BUCKET/" --recursive --exclude 'assets/*' --exclude index.html --exclude sw.js --cache-control no-cache --only-show-errors
+          for file in index.html sw.js; do
+            aws s3 cp "$file" "s3://$SITE_BUCKET/$file" --cache-control no-cache --only-show-errors
+          done
+      - name: Invalidate CloudFront and verify the release over HTTPS
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          id=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths '/*' --query Invalidation.Id --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION_ID" --id "$id"
+          site=https://d13loewuo578uu.cloudfront.net
+          for route in / /today; do
+            curl --fail --silent --show-error "$site$route" | cmp index.html -
+          done
+          for file in assets/* sw.js manifest.webmanifest; do
+            curl --fail --silent --show-error "$site/$file" | cmp "$file" -
+          done
