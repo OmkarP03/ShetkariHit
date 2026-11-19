@@ -110,7 +110,7 @@
   .welcome-strip p { @apply text-xs font-bold uppercase tracking-[0.14em] text-[#A8D2B9]; }
   .welcome-strip h2 { @apply mt-2 max-w-lg text-2xl font-bold tracking-[-0.02em]; }
   .welcome-strip span { @apply mt-2 block max-w-xl text-sm leading-6 text-[#C8E1D3]; }
-  .welcome-strip button { @apply flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#BBF7D0] px-4 text-sm font-bold text-[#123D2B]; }
+  .welcome-strip button { @apply flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#123D2B]; }
   .welcome-strip button svg, .crop-overview > svg, .scheme-summary > svg { @apply h-5 w-5 fill-none stroke-current stroke-2; }
   .dashboard-section-title { @apply mb-3 mt-7 flex items-end justify-between gap-3; }
   .dashboard-section-title p { @apply text-xs font-bold uppercase tracking-[0.14em] text-leaf; }
