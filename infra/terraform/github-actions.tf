@@ -14,7 +14,7 @@ resource "aws_iam_role" "github_deploy" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:OmkarP03/ShetkariHit:ref:refs/heads/sarthak/shetkarihit"
+          "token.actions.githubusercontent.com:sub" = "repo:OmkarP03@197241369/ShetkariHit@1381233641:ref:refs/heads/sarthak/shetkarihit"
         }
       }
     }]

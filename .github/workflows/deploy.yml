@@ -20,12 +20,13 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Validate configuration, install, test and build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -40,7 +41,7 @@ jobs:
           npm run build
           for file in index.html sw.js retire-api-cache.js manifest.webmanifest; do test -s "dist/$file"; done
           compgen -G 'dist/assets/*.js' > /dev/null
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend
           path: frontend/dist/
@@ -57,16 +58,20 @@ jobs:
       SITE_BUCKET: ${{ vars.S3_BUCKET }}
       DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: frontend
           path: dist
-      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-          allowed-account-ids: '818783923752'
           role-session-name: deploy-${{ github.run_id }}
+      - name: Verify AWS account before upload
+        run: |
+          account=$(aws sts get-caller-identity --query Account --output text)
+          test "$account" = '818783923752'
+          echo "Verified AWS account $account"
       - name: Publish assets, then entry points
         working-directory: dist
         run: |
